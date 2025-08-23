@@ -1,0 +1,7 @@
+New connection from: 127.0.0.1:30396
+GET /coffee HTTP/1.1
+User-Agent: Mozilla/5.0 (Windows NT; Windows NT 10.0; en-IN) WindowsPowerShell/5.1.22621.5697
+Host: localhost:42069
+Connection: Keep-Alive
+
+Channel closed

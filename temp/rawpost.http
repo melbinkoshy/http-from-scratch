@@ -1,0 +1,11 @@
+New connection from: 127.0.0.1:39229
+POST /coffee HTTP/1.1
+Host: localhost:42069
+User-Agent: curl/8.7.1
+Accept: */*
+Content-Type: application/json
+Content-Length: 21
+
+hey there how are you
+error: read tcp 127.0.0.1:42069->127.0.0.1:39229: wsarecv: An existing connection was forcibly closed by the remote host.
+Channel closed
