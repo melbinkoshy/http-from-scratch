@@ -20,6 +20,17 @@ func TestHeaders(t *testing.T) {
 
 	// Test: Valid  header
 	headers = NewHeaders()
+	data = []byte("Host: localhost:42069\r\nfoo: fighters\r\nfoo:  are the best        \r\n\r\n")
+	n, done, err = headers.Parse(data)
+	require.NoError(t, err)
+	require.NotNil(t, headers)
+	assert.Equal(t, "localhost:42069", headers.Get("Host"))
+	assert.Equal(t, "fighters, are the best", headers.Get("Foo"))
+	assert.Equal(t, 66, n)
+	assert.True(t, done)
+
+	// Test: Valid  header
+	headers = NewHeaders()
 	data = []byte("Host: localhost:42069\r\nfoo: fighters        \r\n\r\n")
 	n, done, err = headers.Parse(data)
 	require.NoError(t, err)

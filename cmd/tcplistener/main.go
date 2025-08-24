@@ -30,9 +30,13 @@ func main() {
 			log.Fatal(err)
 		}
 		fmt.Println("Request line")
-		fmt.Println("Method:", request.RequestLine.Method)
-		fmt.Println("Target:", request.RequestLine.RequestTarget)
-		fmt.Println("Version:", request.RequestLine.HttpVersion)
+		fmt.Println("-Method:", request.RequestLine.Method)
+		fmt.Println("-Target:", request.RequestLine.RequestTarget)
+		fmt.Println("-Version:", request.RequestLine.HttpVersion)
+		fmt.Println("Headers")
+		request.Headers.ForEach(func(n, v string) {
+			fmt.Printf(" -%s: %s\n", n, v)
+		})
 
 	}
 
