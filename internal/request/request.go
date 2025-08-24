@@ -5,18 +5,21 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"tcp_http/internal/headers"
 )
 
 type parserState string
 
 const (
-	stateInit  parserState = "init"
-	stateDone  parserState = "done"
-	stateError parserState = "errorState"
+	stateInit           parserState = "init"
+	stateParsingHeaders parserState = "parsingHeaders"
+	stateDone           parserState = "done"
+	stateError          parserState = "errorState"
 )
 
 type Request struct {
 	RequestLine RequestLine
+	Headers     *headers.Headers
 
 	state parserState
 }
@@ -27,7 +30,8 @@ func (r *Request) done() bool {
 
 func newRequest() *Request {
 	return &Request{
-		state: stateInit,
+		state:   stateInit,
+		Headers: headers.NewHeaders(),
 	}
 }
 
@@ -79,11 +83,12 @@ func (r *Request) parse(data []byte) (int, error) {
 	read := 0
 outer:
 	for {
+		currentData := data[read:]
 		switch r.state {
 		case stateError:
 			return 0, ErrRequestInErrState
 		case stateInit:
-			rl, n, err := parseRequestLine(data[read:])
+			rl, n, err := parseRequestLine(currentData)
 			if err != nil {
 				r.state = stateError
 				return 0, err
@@ -93,9 +98,23 @@ outer:
 			}
 			r.RequestLine = *rl
 			read += n
-			r.state = stateDone
+			r.state = stateParsingHeaders
+		case stateParsingHeaders:
+			n, done, err := r.Headers.Parse(currentData)
+			if err != nil {
+				return 0, err
+			}
+			if done {
+				r.state = stateDone
+			}
+			if n == 0 {
+				break outer
+			}
+			read += n
 		case stateDone:
 			break outer
+		default:
+			panic("No state found")
 		}
 
 	}
