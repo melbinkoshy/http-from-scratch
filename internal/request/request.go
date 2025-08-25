@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"tcp_http/internal/headers"
 )
@@ -13,6 +14,7 @@ type parserState string
 const (
 	stateInit           parserState = "init"
 	stateParsingHeaders parserState = "parsingHeaders"
+	stateParsingBody    parserState = "parsingBody"
 	stateDone           parserState = "done"
 	stateError          parserState = "errorState"
 )
@@ -20,8 +22,27 @@ const (
 type Request struct {
 	RequestLine RequestLine
 	Headers     *headers.Headers
+	Body        string
 
 	state parserState
+}
+
+func getIntHeader(headers *headers.Headers, name string, defaultValue int) int {
+	valueStr, exists := headers.Get(name)
+	if !exists {
+		return defaultValue
+	}
+	value, err := strconv.Atoi(valueStr)
+	if err != nil {
+		return defaultValue
+	}
+	return value
+}
+
+func (r *Request) hasBody() bool {
+	//TODO : Change for chunked encoding
+	length := getIntHeader(r.Headers, "content-length", 0)
+	return length > 0
 }
 
 func (r *Request) done() bool {
@@ -32,6 +53,7 @@ func newRequest() *Request {
 	return &Request{
 		state:   stateInit,
 		Headers: headers.NewHeaders(),
+		Body:    "",
 	}
 }
 
@@ -39,6 +61,7 @@ type RequestLine struct {
 	HttpVersion   string
 	RequestTarget string
 	Method        string
+	Body          string
 }
 
 func (r *RequestLine) validHTTP() bool {
@@ -84,6 +107,9 @@ func (r *Request) parse(data []byte) (int, error) {
 outer:
 	for {
 		currentData := data[read:]
+		if len(currentData) == 0 {
+			break outer
+		}
 		switch r.state {
 		case stateError:
 			return 0, ErrRequestInErrState
@@ -105,12 +131,28 @@ outer:
 				return 0, err
 			}
 			if done {
-				r.state = stateDone
+				if r.hasBody() {
+					r.state = stateParsingBody
+
+				} else {
+					r.state = stateDone
+				}
 			}
 			if n == 0 {
 				break outer
 			}
 			read += n
+		case stateParsingBody:
+			length := getIntHeader(r.Headers, "Content-Length", 0)
+			if length == 0 {
+				r.state = stateDone
+			}
+			remaining := min(length-len(r.Body), len(currentData))
+			r.Body += string(currentData[:remaining])
+			read += remaining
+			if len(r.Body) == length {
+				r.state = stateDone
+			}
 		case stateDone:
 			break outer
 		default:
