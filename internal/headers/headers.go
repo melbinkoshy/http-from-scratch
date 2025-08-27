@@ -67,6 +67,11 @@ func (h *Headers) Replace(name, value string) {
 	h.headers[name] = value
 }
 
+func (h *Headers) Delete(name string) {
+	name = strings.ToLower(name)
+	delete(h.headers, name)
+}
+
 func (h *Headers) Set(name, value string) {
 	existingValue, exists := h.KeyExists(strings.ToLower(name))
 	if exists {
