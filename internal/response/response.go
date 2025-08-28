@@ -18,6 +18,14 @@ const (
 	StatusInternalError StatusCode = 500
 )
 
+func GetDefaultHeaders(contentLen int) *headers.Headers {
+	h := headers.NewHeaders()
+	h.Set("Content-Length", fmt.Sprintf("%d", contentLen))
+	h.Set("Connection", "close")
+	h.Set("Content-Type", "text/plain")
+	return h
+}
+
 type Writer struct {
 	writer io.Writer
 }
@@ -60,10 +68,10 @@ func (w *Writer) WriteBody(p []byte) (int, error) {
 
 }
 
-func GetDefaultHeaders(contentLen int) *headers.Headers {
-	h := headers.NewHeaders()
-	h.Set("Content-Length", fmt.Sprintf("%d", contentLen))
-	h.Set("Connection", "close")
-	h.Set("Content-Type", "text/plain")
-	return h
-}
+// func (w *Writer) WriteChunkedBody(p []byte) (int, error) {
+
+// }
+
+// func (w *Writer) WriteChunkedBodyDone() (int, error) {
+
+// }
